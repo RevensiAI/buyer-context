@@ -2,6 +2,8 @@
 
 > The canonical schema for `./buyer-context.md`. Every audit reads this document to score the **Buyer-Context Alignment** dimension. Stable; changes here require updating each surface skill.
 
+> **Maintainers:** the schema below (sections "Why this exists" through the fenced markdown block) is contract — 11 audit skills grep these headings. The Q&A flow notes after the schema are informational; the canonical, runnable flow lives in `buyer-context/SKILL.md`.
+
 ## Why this exists
 
 Audits without an anchor produce generic feedback ("your headline could be more specific"). Audits with an anchor produce specific feedback ("your headline says 'platform for teams' but your buyer-context.md says you sell to engineering managers at Series B startups replacing Jenkins — your homepage never names that buyer"). The anchor turns the audit from advice into matchmaking.
@@ -95,47 +97,20 @@ What's the *one* action this site is trying to drive? Audits will weight Agent-A
 
 ## How `buyer-context` skill captures this
 
-The skill walks the user through the schema in **3 batches** (avoid overwhelming the user with 20 questions at once). Mix of `AskUserQuestion` (closed choices) and free-text prompts (open content).
+See `buyer-context/SKILL.md` for the canonical Q&A flow. Briefly:
 
-### Batch 1 — Brand & ICP (5 questions)
+1. The skill `WebFetch`-es the homepage plus 2 subpages (`/pricing`, `/customers` — discovered from homepage links, with literal-path fallbacks) in parallel.
+2. It consolidates evidence (brand, tagline, CTA copy, pricing tiers, testimonial titles, customer-logo verticals, recurring noun phrases, competitor mentions, etc.).
+3. High-confidence fields — Brand, Site, Tagline, Primary CTA, Category — are auto-filled silently and surfaced for review at the end.
+4. The remaining ~17 fields are asked **one question per `AskUserQuestion` call**, each with 2-4 site-derived options plus the auto-appended "Other" for custom answers. Even prose-shaped fields (JTBD, pitch, USP, core differentiating claim) are presented as 2-3 candidate phrasings synthesized from site copy, so the user clicks rather than types.
+5. After all answers are collected, the file is written and a single review screen lets the user edit any auto-filled value before finalizing.
 
-- `AskUserQuestion`: Segment? (B2B / B2C / B2B2C)
-- `AskUserQuestion`: Sales motion? (PLG / sales-led / hybrid / self-serve)
-- `AskUserQuestion`: Company size? (solo / SMB / mid-market / enterprise / mixed)
-- Free text: Industry/vertical focus
-- Free text: Buyer titles (and user titles if different)
-- Free text: Anti-ICP — who this is *not* for
-
-### Batch 2 — JTBD & Positioning (5 questions)
-
-- Free text: Primary JTBD ("When I'm X, I want to Y, so I can Z")
-- Free text: Trigger event
-- Free text: Current alternative
-- Free text: One-sentence pitch
-- Free text: Core differentiating claim
-
-### Batch 3 — Proof, Vocabulary, CTA (5 questions)
-
-- Free text: 3–5 most cite-able proof points
-- Free text: Must-win verticals (1–3)
-- Free text: Vocabulary to use vs. avoid
-- Free text: Failure modes of incumbents (top 3)
-- `AskUserQuestion`: Primary CTA pattern? (Start free trial / Book demo / Sign up email / Contact sales / Other)
-
-### Pre-fill where possible
-
-Before asking, the skill `WebFetch`-es the user's site and extracts:
-- Brand name (from `<title>`, og:site_name, or H1)
-- Current tagline (from H1 or first paragraph)
-- Visible product names
-- Existing CTA copy
-
-Then offers these as defaults the user can confirm or override — saves the user typing.
+If site discovery fails completely, the skill falls back to fully-generic option lists and notes the degradation at the top of the output file.
 
 ## Update vs. replace
 
-If `./buyer-context.md` already exists, the skill:
-1. Reads it.
-2. Asks the user: "Update specific sections, or replace entirely?"
-3. If update: shows each section's current content and asks `AskUserQuestion` whether to keep, edit, or skip.
-4. If replace: starts fresh.
+If `./buyer-context.md` already exists, the skill re-fetches the site (so it has *current* evidence to diff against) and offers three modes via a single `AskUserQuestion`:
+
+- **Refresh stale fields only** *(default)* — only asks about fields where site evidence has changed since the last update OR the file is older than 90 days AND the field is in the high-decay set (proof points, why-now, tagline, primary CTA).
+- **Walk all questions** — same as the new-file flow, but each question prepends "Keep current: <existing value>" as the first option.
+- **Replace from scratch** — discards the existing file and starts fresh.
