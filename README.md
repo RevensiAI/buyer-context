@@ -30,13 +30,13 @@ npx skills add RevensiAI/buyer-context/homepage-audit
 
 Run these inside your agent, from the directory you want reports to land in. Order matters: the anchor (step 1) is what every audit reads for alignment scoring.
 
-1. **Define your buyer context** (one-time, ~5 minutes of guided Q&A):
+1. **Define your buyer context** (one-time, ~3 minutes — site-grounded options, near-zero typing):
 
    ```
    /buyer-context
    ```
 
-   Writes `./buyer-context.md` — your ICP, positioning, USP, proof points, and CTA patterns.
+   Writes `./buyer-context.md` — your ICP, positioning, USP, proof points, and CTA patterns. See [About `/buyer-context`](#about-buyer-context) for what makes this the anchor every other audit reads.
 
 2. **Audit your crawl-layer infrastructure** (robots.txt, sitemap, llms.txt, JSON-LD, anti-bot rules):
 
@@ -78,6 +78,49 @@ To track progress over time, schedule a periodic re-run with the `/loop` skill:
 ```
 
 The cache makes monthly re-runs cheap; a fresh `./reports/full-audit-report.md` lands every 30 days.
+
+## About `/buyer-context`
+
+`/buyer-context` is the anchor of the suite. Every other audit reads `./buyer-context.md` to score the **Buyer-Context Alignment** dimension. Without it, audits drop to "no-anchor mode" and give generic feedback ("your headline could be more specific"). With it, audits become matchmaking — *"your homepage says 'platform for teams' but your buyer is engineering managers at Series B startups replacing Jenkins, and you never name them."*
+
+The asset is also reusable beyond this suite. Any repair agent, content rewriter, ad-copy generator, or sales-enablement tool can read the same file — it's plain Markdown with stable headings, diffable in git, durable across runtimes.
+
+### Why it takes ~3 minutes, not 3 hours
+
+Most "fill out an ICP doc" exercises fail because they're blank-page typing. This one front-loads inference before asking anything:
+
+- Fetches your homepage + `/pricing` + `/customers` in parallel via `audit-fetch.mjs`, then builds an internal evidence bundle (brand, tagline, CTA copy, pricing tiers, testimonial titles, vertical clusters, recurring noun phrases, competitor mentions, numeric claims, certification badges, recent press).
+- **Auto-fills 5 high-confidence fields silently** — Brand, Site, Tagline, Primary CTA, Category — and surfaces them at the final review screen.
+- Asks the remaining ~17 fields one at a time, each as a click-through with 2–4 options *derived from your site copy* plus an auto-appended "Other" for free text. Each option's description tells you *why* it's a candidate ("your CTAs say…", "your /pricing tiers are…").
+- Even prose-shaped fields — JTBD, one-sentence pitch, USP, core differentiating claim — are presented as 2–3 candidate phrasings synthesized from your hero and `/features` copy. You click rather than type.
+
+Net effect: ~17 clicks, not 17 essays.
+
+### What it captures
+
+The output file follows a stable schema (audit skills grep for these headings, so they don't change):
+
+- **Brand & Product** — name, primary product, site, category, current tagline.
+- **ICP** — segment, sales motion, company size, vertical, geography, buyer titles, user titles, anti-ICP.
+- **Job-to-be-Done** — primary JTBD in "When I'm X, I want to Y, so I can Z" form, trigger event, current alternative, switching cost.
+- **Positioning** — one-sentence pitch, USP, core differentiating claim, why now.
+- **Proof Points** — 3–5 cite-able, dated, sourced facts an LLM should be able to quote.
+- **Must-Win Verticals** — the 1–3 segments that matter most this quarter (audits weight alignment to these higher).
+- **Distinguishing Vocabulary** — words to *use*, words to *avoid*.
+- **Failure Modes of Incumbents** — what's broken about the obvious alternative.
+- **Primary Conversion Action** — primary CTA, secondary CTA, anti-CTA.
+
+Full schema: [`shared/buyer-context.spec.md`](shared/buyer-context.spec.md).
+
+### Staying current
+
+Re-running `/buyer-context` on a site that already has the file re-fetches your site (so it can diff against current evidence) and offers three modes:
+
+- **Refresh stale fields only** *(default)* — only asks fields where site evidence has measurably changed since the last update, OR the file is older than 90 days AND the field is in the high-decay set (Tagline, Primary CTA, Proof Points, Why Now).
+- **Walk all questions** — same as the new-file flow, but every question prepends "Keep current: \<value\>" as the first option.
+- **Replace from scratch** — discards the existing file.
+
+Audits use the `*Last updated: <YYYY-MM-DD>*` line to flag staleness. A typical cadence is once per quarter, or whenever positioning shifts (new ICP, new tagline) or audits start flagging low Buyer-Context Alignment across multiple surfaces — that often means the anchor itself drifted from the site.
 
 ## What a report looks like
 
