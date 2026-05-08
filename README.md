@@ -1,6 +1,6 @@
 # Buyer Context Skills for AI Agents
 
-A 12-skill audit collection for the way **AI buyers** shop today — agents on ChatGPT, Claude, Gemini, and Perplexity that research vendors and build shortlists on behalf of the humans buying your software.
+A 12-skill audit collection for the way **AI-mediated B2B buyers** make purchase decisions today — agents on ChatGPT, Claude, Gemini, and Perplexity that research vendors and build shortlists on behalf of the humans buying your software.
 
 When a buyer briefs their AI assistant with "find me a \<category\> for \<my situation\>", the agent visits a handful of vendor sites and decides which ones make the cut. This collection scores whether your site survives that pass: can the agent extract your offer, find your price, see your ICP fit, cite your proof, and progress without a human? It's a different lens from SEO — the AI shortlist is the new gatekeeper.
 
@@ -28,7 +28,7 @@ npx skills add RevensiAI/buyer-context/homepage-audit
 
 ## Quickstart
 
-Run these inside Claude Code, from the directory you want reports to land in. The order matters: the anchor (step 1) is what every audit reads for alignment scoring.
+Run these inside your agent, from the directory you want reports to land in. The order matters: the anchor (step 1) is what every audit reads for alignment scoring.
 
 1. **Define your buyer context** (one time, ~5 minutes of guided Q&A):
 
@@ -108,7 +108,7 @@ Below the score table, each report lists what's working, what's broken, and prio
 |---|-------|--------------|--------|
 | 1 | `buyer-context` | Guided Q&A → canonical positioning doc | `./buyer-context.md` |
 | 2 | `crawler-audit` | robots.txt, sitemap, llms.txt, JSON-LD, anti-bot | `./reports/crawler-audit.md` |
-| 3 | `homepage-audit` | Homepage AI-readability score | `./reports/homepage-audit.md` |
+| 3 | `homepage-audit` | Homepage agent-shortlist score | `./reports/homepage-audit.md` |
 | 4 | `pricing-audit` | Pricing page (Offer schema, plans, terms) | `./reports/pricing-audit.md` |
 | 5 | `about-audit` | About/Team (Organization + Person schema) | `./reports/about-audit.md` |
 | 6 | `comparison-audit` | /vs/ pages (factual claims, competitor names) | `./reports/comparison-audit.md` |
