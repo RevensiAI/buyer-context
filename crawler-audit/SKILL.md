@@ -23,14 +23,14 @@ This is the only audit that doesn't read `./buyer-context.md` — the checks her
 
 ## Tools
 
-Use these via the Bash tool — they cache to `.audit-cache/` and return JSON:
+Use these via the Bash tool — each call fetches fresh and returns JSON:
 
 - `node ./scripts/audit-robots.mjs <domain>` — robots.txt allow/disallow matrix for the AI-bot panel, sitemap directives, crawl-delays.
 - `node ./scripts/audit-sitemap.mjs <domain-or-sitemap-url>` — URL count, newest/oldest `lastmod`, child sitemap-index handling.
 - `node ./scripts/audit-uatest.mjs <url>` — fetches with browser, GPTBot, and curl UAs; reports per-UA status, byte-delta, and anti-bot signals.
-- `node ./scripts/audit-fetch.mjs <url>` — single-UA fetch returning `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (snippet by default), and `cachePath` for the full payload.
+- `node ./scripts/audit-fetch.mjs <url>` — single-UA fetch returning `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (snippet by default), and `payloadPath` for the full payload (written to `./reports/fetch_<sha1>.json`, overwritten on every run).
 
-All scripts accept `--cache=<dir>` and `--no-cache`. First run idempotently appends `.audit-cache/` and `reports/` to `.gitignore` if one exists.
+First run idempotently appends `reports/` to `.gitignore` if one exists.
 
 ## What It Checks
 
@@ -60,7 +60,7 @@ Also report (also returned by `audit-robots.mjs`):
 
 Run `node ./scripts/audit-fetch.mjs https://<domain>/llms.txt` and `/llms-full.txt`. For each:
 - `status` (200 = present, 404 = absent, anything else = fix)
-- If present: read `cachePath` for the full body. Well-formed markdown? Sections match the [llms.txt proposal](https://llmstxt.org)? URLs valid?
+- If present: read `payloadPath` for the full body. Well-formed markdown? Sections match the [llms.txt proposal](https://llmstxt.org)? URLs valid?
 - If absent: flag as a missed opportunity, not a critical failure (it's emerging-standard, not required).
 
 ### 3. `sitemap.xml`

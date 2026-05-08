@@ -6,7 +6,6 @@
 //
 // Usage: node audit-uatest.mjs <url>
 //                              [--uas=browser,gptbot,curl]   default
-//                              [--cache=...] [--no-cache]
 
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
@@ -35,7 +34,7 @@ function main() {
     else if (!url) url = a;
   }
   if (!url) {
-    console.error('Usage: audit-uatest <url> [--uas=ua1,ua2,...] [--cache=...] [--no-cache]');
+    console.error('Usage: audit-uatest <url> [--uas=ua1,ua2,...]');
     process.exit(1);
   }
 

@@ -4,16 +4,15 @@
 // Usage:
 //   node audit-fetch.mjs <url>
 //                        [--ua=browser|gptbot|chatgpt-user|claudebot|perplexitybot|curl|<custom-string>]
-//                        [--cache=<dir>]   default .audit-cache
-//                        [--no-cache]      skip read-from-cache (still writes)
 //                        [--full]          include full HTML and full visible text in stdout
 //                        [--timeout=<ms>]  default 15000
 //
 // Stdout: a compact JSON summary (jsonLd parsed, OG tags, canonical, anti-bot signals,
-// visibleText snippet). Full HTML + headers are persisted under <cache>/<sha>.json so
-// downstream consumers can Read it on demand.
+// visibleText snippet) with a `payloadPath` pointing at the full payload on disk.
+// Full HTML + headers are persisted under ./reports/fetch_<sha1>.json (overwritten on
+// every run — no reuse) so downstream consumers can `Read` it on demand.
 //
-// Idempotently appends `.audit-cache/` and `reports/` to a sibling `.gitignore` on first run.
+// Idempotently appends `reports/` to a sibling `.gitignore` on first run.
 
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
@@ -36,13 +35,12 @@ const UA_PRESETS = {
 };
 
 const SUMMARY_TEXT_LIMIT = 5000;
+const REPORTS_DIR = 'reports';
 
 function parseArgs(argv) {
-  const args = { url: null, ua: 'browser', cache: '.audit-cache', noCache: false, full: false, timeout: 15000 };
+  const args = { url: null, ua: 'browser', full: false, timeout: 15000 };
   for (const arg of argv) {
     if (arg.startsWith('--ua=')) args.ua = arg.slice(5);
-    else if (arg.startsWith('--cache=')) args.cache = arg.slice(8);
-    else if (arg === '--no-cache') args.noCache = true;
     else if (arg === '--full') args.full = true;
     else if (arg.startsWith('--timeout=')) args.timeout = parseInt(arg.slice(10), 10);
     else if (!arg.startsWith('--') && !args.url) args.url = arg;
@@ -54,24 +52,18 @@ function resolveUA(spec) {
   return UA_PRESETS[spec.toLowerCase()] ?? spec;
 }
 
-function cacheKey(url, ua) {
+function payloadKey(url, ua) {
   return createHash('sha1').update(`${url}\n${ua}`).digest('hex');
 }
 
-function ensureGitignore(cacheDir) {
+function ensureGitignore() {
   const gi = '.gitignore';
   if (!existsSync(gi)) return;
   const body = readFileSync(gi, 'utf8');
   const lines = new Set(body.split(/\r?\n/).map((l) => l.trim()));
-  const wantCache = cacheDir.replace(/\/$/, '') + '/';
-  const wantReports = 'reports/';
-  const additions = [];
-  if (!lines.has(wantCache) && !lines.has(wantCache.slice(0, -1))) additions.push(wantCache);
-  if (!lines.has(wantReports) && !lines.has('reports')) additions.push(wantReports);
-  if (additions.length) {
-    const sep = body.endsWith('\n') ? '' : '\n';
-    appendFileSync(gi, `${sep}# buyer-context audits\n${additions.join('\n')}\n`);
-  }
+  if (lines.has('reports/') || lines.has('reports')) return;
+  const sep = body.endsWith('\n') ? '' : '\n';
+  appendFileSync(gi, `${sep}# buyer-context audits\nreports/\n`);
 }
 
 function extractJsonLd(html) {
@@ -190,23 +182,15 @@ function detectAntiBot(html, status, headers) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.url) {
-    console.error('Usage: audit-fetch <url> [--ua=preset|custom] [--cache=dir] [--no-cache] [--full] [--timeout=ms]');
+    console.error('Usage: audit-fetch <url> [--ua=preset|custom] [--full] [--timeout=ms]');
     process.exit(1);
   }
   const ua = resolveUA(args.ua);
-  const cacheDir = resolve(args.cache);
-  const cachePath = join(cacheDir, `${cacheKey(args.url, ua)}.json`);
+  const reportsDir = resolve(REPORTS_DIR);
+  const payloadPath = join(reportsDir, `fetch_${payloadKey(args.url, ua)}.json`);
 
-  if (!args.noCache && existsSync(cachePath)) {
-    const cached = JSON.parse(readFileSync(cachePath, 'utf8'));
-    cached.fromCache = true;
-    cached.cacheAgeSec = Math.round((Date.now() - new Date(cached.fetchedAt).getTime()) / 1000);
-    emit(cached, args, cachePath);
-    return;
-  }
-
-  ensureGitignore(args.cache);
-  if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
+  ensureGitignore();
+  if (!existsSync(reportsDir)) mkdirSync(reportsDir, { recursive: true });
 
   const t0 = Date.now();
   const ctrl = new AbortController();
@@ -239,10 +223,9 @@ async function main() {
       error,
       fetchedAt: new Date().toISOString(),
       durationMs: elapsed,
-      fromCache: false,
     };
-    writeFileSync(cachePath, JSON.stringify(failure));
-    emit(failure, args, cachePath);
+    writeFileSync(payloadPath, JSON.stringify(failure));
+    emit(failure, args, payloadPath);
     return;
   }
 
@@ -278,11 +261,10 @@ async function main() {
     html,
     htmlBytes: html.length,
     antiBotSignals: detectAntiBot(html, res.status, headers),
-    fromCache: false,
   };
 
-  writeFileSync(cachePath, JSON.stringify(result));
-  emit(result, args, cachePath);
+  writeFileSync(payloadPath, JSON.stringify(result));
+  emit(result, args, payloadPath);
 }
 
 function collectTypes(node, out = []) {
@@ -300,9 +282,10 @@ function collectTypes(node, out = []) {
   return out;
 }
 
-function emit(payload, args, cachePath) {
+function emit(payload, args, payloadPath) {
+  const relPath = relative(process.cwd(), payloadPath) || payloadPath;
   if (args.full) {
-    process.stdout.write(JSON.stringify(payload, null, 2) + '\n');
+    process.stdout.write(JSON.stringify({ ...payload, payloadPath: relPath }, null, 2) + '\n');
     return;
   }
   const summary = { ...payload };
@@ -311,7 +294,7 @@ function emit(payload, args, cachePath) {
     summary.visibleText = summary.visibleText.slice(0, SUMMARY_TEXT_LIMIT);
     summary.visibleTextTruncated = true;
   }
-  summary.cachePath = relative(process.cwd(), cachePath) || cachePath;
+  summary.payloadPath = relPath;
   process.stdout.write(JSON.stringify(summary, null, 2) + '\n');
 }
 

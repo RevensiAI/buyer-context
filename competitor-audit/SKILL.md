@@ -41,7 +41,7 @@ For "Buyer-Context Alignment" specifically, the score reflects how well the **co
 
 ## Tools
 
-- `node ./scripts/audit-fetch.mjs <url>` (via Bash) — caches to `.audit-cache/` and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` parsed, `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB; full HTML at `cachePath`).
+- `node ./scripts/audit-fetch.mjs <url>` (via Bash) — fetches fresh and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` parsed, `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB; full HTML at `payloadPath`).
 - `node ./scripts/audit-find-competitors.mjs <company-or-domain> [count]` — Brave-Search competitor discovery. Requires `BRAVE_API_KEY` (free tier at brave.com/search/api/). Exits non-zero with a clear message if the env var is unset; in that case fall through to user confirmation.
 
 ## Workflow

@@ -43,11 +43,11 @@ If no file exists, proceed directly to Step 2.
 
 ### Step 2 — Site discovery (parallel script fetches)
 
-This skill ships `./scripts/audit-fetch.mjs`. Each call returns JSON with `status`, `jsonLd[]`, `openGraph`, `headings`, `visibleText` (5 KB), `cachePath`, etc., and caches to `.audit-cache/` so re-runs are instant.
+This skill ships `./scripts/audit-fetch.mjs`. Each call fetches fresh and returns JSON with `status`, `jsonLd[]`, `openGraph`, `headings`, `visibleText` (5 KB), `payloadPath`, etc. The full payload is written to `./reports/fetch_<sha1>.json` (overwritten on every run) so you can `Read` the raw HTML on demand.
 
 1. If site URL not yet given, ask once.
 2. Run `node ./scripts/audit-fetch.mjs <homepage-url>` via Bash; parse the JSON.
-3. Read `cachePath` for the full HTML and parse `<a href>` for matches against the regex set `pricing|plans|customers|case-stud|stories|testimonials`. Take the first match per category (one for the pricing-family, one for the customers-family). If no homepage match, fall back to the literal paths `/pricing` and `/customers`.
+3. Read `payloadPath` for the full HTML and parse `<a href>` for matches against the regex set `pricing|plans|customers|case-stud|stories|testimonials`. Take the first match per category (one for the pricing-family, one for the customers-family). If no homepage match, fall back to the literal paths `/pricing` and `/customers`.
 4. **Single message containing 2 parallel Bash calls** to `node ./scripts/audit-fetch.mjs <url>` for the two discovered subpages.
 5. Failure handling:
    - Homepage `visibleTextChars` < 500 → set `homepageThin = true`. Tell the user once ("Couldn't extract much from the homepage; options will be more generic."), proceed.

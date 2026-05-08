@@ -78,7 +78,7 @@ About pages bear extra weight for citation-worthiness:
 
 ## Tools
 
-`node ./scripts/audit-fetch.mjs <url>` (via Bash) — caches to `.audit-cache/` and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; each block has `valid: true|false`), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet; full HTML payload at `cachePath`).
+`node ./scripts/audit-fetch.mjs <url>` (via Bash) — fetches fresh and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; each block has `valid: true|false`), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet; full HTML payload at `payloadPath`).
 
 ## Workflow
 

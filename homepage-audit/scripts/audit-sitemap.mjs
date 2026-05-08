@@ -3,7 +3,7 @@
 //
 // Usage: node audit-sitemap.mjs <domain-or-sitemap-url>
 //                               [--depth=1]   follow child sitemap-indexes 1 level
-//                               [--ua=...] [--cache=...] [--no-cache]
+//                               [--ua=...]
 
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
@@ -65,7 +65,7 @@ function main() {
     else if (!target) target = a;
   }
   if (!target) {
-    console.error('Usage: audit-sitemap <domain-or-sitemap-url> [--depth=1] [--ua=...] [--cache=...] [--no-cache]');
+    console.error('Usage: audit-sitemap <domain-or-sitemap-url> [--depth=1] [--ua=...]');
     process.exit(1);
   }
   const url = normalize(target);
@@ -103,7 +103,6 @@ function main() {
     finalUrl: fetched.finalUrl,
     status: fetched.status,
     fetchedAt: fetched.fetchedAt,
-    fromCache: fetched.fromCache,
     isIndex: parsed.sitemaps.length > 0 && parsed.urls.length === 0,
     urlCount: parsed.urls.length,
     childSitemapCount: parsed.sitemaps.length,

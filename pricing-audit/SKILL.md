@@ -81,12 +81,12 @@ If there's a "Contact sales" tier, that's expected. But:
 
 ## Tools
 
-`node ./scripts/audit-fetch.mjs <url>` (via Bash) — caches to `.audit-cache/` and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; each block has `valid: true|false`), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet; full HTML payload at `cachePath`).
+`node ./scripts/audit-fetch.mjs <url>` (via Bash) — fetches fresh and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; each block has `valid: true|false`), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet; full HTML payload at `payloadPath`).
 
 ## Workflow
 
 1. Read `./buyer-context.md` if present; otherwise no-anchor mode.
-2. Run `node ./scripts/audit-fetch.mjs <url>` via Bash. Parse JSON; inspect `jsonLd[]` (look for `Product`/`Offer` per tier), `headings`, `visibleText`. Read `cachePath` if you need raw HTML for plan-table inspection.
+2. Run `node ./scripts/audit-fetch.mjs <url>` via Bash. Parse JSON; inspect `jsonLd[]` (look for `Product`/`Offer` per tier), `headings`, `visibleText`. Read `payloadPath` if you need raw HTML for plan-table inspection.
 3. Apply the universal rubric (see `references/audit-engine.md`) with pricing weights.
 4. Run surface-specific checks above.
 5. For each visible plan, produce a structured table in the report.

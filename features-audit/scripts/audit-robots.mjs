@@ -3,7 +3,7 @@
 //
 // Usage: node audit-robots.mjs <domain-or-url>
 //                              [--path=/]   path to evaluate (default '/')
-//                              [--ua=...] [--cache=...] [--no-cache]
+//                              [--ua=...]
 //
 // Output: JSON with bot allow/disallow status, sitemaps, crawl-delays.
 
@@ -111,7 +111,7 @@ function main() {
     else if (!target) target = a;
   }
   if (!target) {
-    console.error('Usage: audit-robots <domain-or-url> [--path=/] [--ua=...] [--cache=...] [--no-cache]');
+    console.error('Usage: audit-robots <domain-or-url> [--path=/] [--ua=...]');
     process.exit(1);
   }
   const url = normalizeRobotsUrl(target);
@@ -132,7 +132,6 @@ function main() {
     finalUrl: fetched.finalUrl,
     status: fetched.status,
     fetchedAt: fetched.fetchedAt,
-    fromCache: fetched.fromCache,
     present,
     sitemaps,
     crawlDelays: Object.fromEntries(

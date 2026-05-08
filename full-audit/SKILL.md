@@ -68,7 +68,7 @@ Run the equivalent of `crawler-audit` first using the scripts shipped in this sk
 This step is sequential because:
 - The sitemap discovered here informs URL discovery in Step 3.
 - The bot allow/disallow matrix informs what subsequent audits should report.
-- The cache populated here serves the parallel subagents in Step 4 (they hit `.audit-cache/` instead of refetching).
+- The full payloads written here (under `./reports/fetch_<sha1>.json`) are available for parallel subagents in Step 4 to `Read` if needed; each subagent issues its own fresh fetch for its target surface.
 
 Either:
 - (a) Inline the full `crawler-audit` workflow here (preferred — keeps full-audit self-contained), or
@@ -78,7 +78,7 @@ Output: `./reports/crawler-audit.md`.
 
 ### Step 3 — URL discovery
 
-From the sitemap (preferred — already parsed by `audit-sitemap.mjs` in Step 2) and the homepage's primary navigation (read the homepage's `cachePath` from Step 2's cache to inspect `<a href>` links), discover canonical URLs for these surfaces. Use the heuristics below; if a surface isn't found, mark it absent and note in the final report.
+From the sitemap (preferred — already parsed by `audit-sitemap.mjs` in Step 2) and the homepage's primary navigation (read the homepage's `payloadPath` from Step 2 to inspect `<a href>` links), discover canonical URLs for these surfaces. Use the heuristics below; if a surface isn't found, mark it absent and note in the final report.
 
 | Surface | Discovery patterns (in priority order) |
 |---------|----------------------------------------|
@@ -91,7 +91,7 @@ From the sitemap (preferred — already parsed by `audit-sitemap.mjs` in Step 2)
 | FAQ | `/faq`, `/faqs`, `/help`, `/support`, nav text "FAQ", "Help" |
 | Agent page | `/for-ai-agents`, `/llms`, `/llms.html`, `/ai`, `/agents`, `/for-llms` |
 
-For each URL: confirm it returns 200 with non-empty HTML before queueing a subagent. Easiest check: `node ./scripts/audit-fetch.mjs <candidate-url>` and read `status` + `bytes` from the JSON output (the result lands in `.audit-cache/`, so the subagent inherits it for free).
+For each URL: confirm it returns 200 with non-empty HTML before queueing a subagent. Easiest check: `node ./scripts/audit-fetch.mjs <candidate-url>` and read `status` + `bytes` from the JSON output. Each subagent will fetch its own URL fresh (no shared cache).
 
 ### Step 4 — Dispatch parallel subagents
 
@@ -139,8 +139,8 @@ Write to <OUTPUT_PATH> with:
 - Recommended next steps
 
 # Tools available
-- Bash — run `node ./scripts/audit-fetch.mjs <url>` to fetch the page. Returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; `valid: true|false` per block), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet), and `cachePath` for the full HTML.
-- Read — read `cachePath` if you need the raw HTML or the complete visible text.
+- Bash — run `node ./scripts/audit-fetch.mjs <url>` to fetch the page. Returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; `valid: true|false` per block), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet), and `payloadPath` for the full HTML.
+- Read — read `payloadPath` if you need the raw HTML or the complete visible text.
 - Write — write the report to <OUTPUT_PATH>.
 
 Note: `./scripts/audit-fetch.mjs` is shipped inside this orchestrator's skill folder and inside every per-surface skill folder. Subagents invoked by the Task tool should use a relative path that resolves under the orchestrator's CWD.
