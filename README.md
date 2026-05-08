@@ -8,6 +8,7 @@ This is not SEO. It's a different lens: when an agent visits your homepage on a 
 
 - [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) installed and authenticated.
 - Skills are installed via `npx skills add` and invoked with `/skill-name` inside Claude Code.
+- Node.js 18+ on `PATH` (the per-skill scripts use built-in `fetch`).
 
 That's it — no API keys required for the core flow. `BRAVE_API_KEY` is optional (see [Optional environment](#optional-environment)).
 
@@ -49,6 +50,32 @@ Run these inside Claude Code, from the directory you want reports to land in. Th
    ```
 
 Reports land in `./reports/`. `full-audit` orchestrates skills 2–10 in parallel and writes a synthesized cross-surface report.
+
+If you skip step 1, `/full-audit` and `/competitor-audit` notice the missing anchor and offer to chain in `/buyer-context` for you — so you can also start at step 3 cold.
+
+### How fetching works
+
+Each skill ships small Node scripts under `<skill>/scripts/`:
+
+- `audit-fetch.mjs` — page fetcher returning structured JSON (parsed JSON-LD, OG/Twitter, canonical, headings, anti-bot signals, `visibleText`).
+- `audit-robots.mjs` — fetches and parses `robots.txt` into a per-bot allow/disallow matrix for the AI-bot panel.
+- `audit-sitemap.mjs` — sitemap URL count, freshness, sitemap-index walking.
+- `audit-uatest.mjs` — fetches the same URL with browser/GPTBot/curl UAs and diffs the responses (the only reliable anti-bot detector).
+- `audit-find-competitors.mjs` (competitor-audit only) — Brave Search competitor discovery.
+
+Throughout the SKILL.md files, `./scripts/<name>.mjs` refers to a script under the **skill's** folder (typically `~/.claude/skills/<skill>/scripts/<name>.mjs` after install). Bash runs in your project CWD, so the model invokes scripts using their absolute install path while reports and the cache land in your project directory.
+
+Responses cache to `./.audit-cache/` in your CWD (sha-keyed by URL+UA), so re-running an audit is instant and parallel subagents share the cache. On first run, both `.audit-cache/` and `reports/` are appended to your `.gitignore` if one exists.
+
+### Re-audit cadence
+
+To track progress over time, schedule a periodic re-audit using the [`/loop`](https://github.com/anthropics/superpowers) skill:
+
+```
+/loop 30d /full-audit example.com
+```
+
+The cache makes monthly re-runs cheap; a fresh `./reports/full-audit-report.md` lands every 30 days.
 
 ## What a report looks like
 
@@ -105,7 +132,7 @@ Full rubric: [`shared/audit-engine.md`](shared/audit-engine.md).
 
 ## Optional environment
 
-- `BRAVE_API_KEY` — enables `competitor-audit` to discover competitors via Brave Search when no URL is given. Without it, competitor-audit requires a competitor URL as input.
+- `BRAVE_API_KEY` — enables `competitor-audit` to auto-discover competitors via Brave Search (`audit-find-competitors.mjs`) when no URL is given. Free tier at [brave.com/search/api](https://brave.com/search/api/). Without it, competitor-audit asks the user to confirm competitor names instead.
 
 ## Repository layout
 
@@ -114,17 +141,34 @@ buyer-context/
 ├── README.md                  ← you are here
 ├── shared/                    ← maintainer source of truth (NOT installed)
 │   ├── audit-engine.md
-│   └── buyer-context.spec.md
+│   ├── ai-bots.md
+│   ├── buyer-context.spec.md
+│   └── scripts/
+│       ├── audit-fetch.mjs
+│       ├── audit-robots.mjs
+│       ├── audit-sitemap.mjs
+│       ├── audit-uatest.mjs
+│       ├── audit-find-competitors.mjs
+│       └── sync-references.mjs   ← maintainer tool, not propagated
 ├── buyer-context/             ← skill folders (each installed standalone)
 │   ├── SKILL.md
-│   └── references/
+│   ├── references/
+│   └── scripts/
 ├── crawler-audit/
 ├── homepage-audit/
 ├── ...
 └── full-audit/
 ```
 
-`shared/` is the canonical authored copy of the rubric and buyer-context schema. Each skill ships its own runtime copy under `references/` so it works standalone after `npx skills add` installs just that one folder. **Maintainers**: when editing rubric content in `shared/`, propagate the change into each `*/references/audit-engine.md`.
+`shared/` is the canonical authored copy. Each skill ships its own runtime copies under `references/` and `scripts/` so it works standalone after `npx skills add` installs just that one folder.
+
+**Maintainers**: edit canonical files in `shared/` only, then run:
+
+```bash
+node shared/scripts/sync-references.mjs
+```
+
+`sync-references` propagates `shared/audit-engine.md`, `shared/ai-bots.md`, `shared/buyer-context.spec.md`, and the runtime scripts into the right per-skill folders. Re-running it is idempotent (skips byte-identical files).
 
 ## License
 

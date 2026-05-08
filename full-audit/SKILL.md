@@ -26,21 +26,49 @@ This pattern is from `superpowers:dispatching-parallel-agents`: each subagent ge
 
 ## Workflow
 
-### Step 1 — Verify anchor
+### Step 1 — Anchor (auto-bootstrap if missing)
+
+If `./buyer-context.md` exists, read it and proceed.
+
+If it doesn't, do **not** refuse. Use `AskUserQuestion` to offer a chained run of `/buyer-context`:
 
 ```
-if !exists("./buyer-context.md"):
-    print: "No buyer-context.md found. Run /buyer-context first — full-audit depends on it for alignment scoring."
-    stop.
+AskUserQuestion({
+  questions: [{
+    header: "Anchor missing",
+    question: "No ./buyer-context.md found. Alignment scoring needs it. Run /buyer-context now (~2 min, mostly click-through)?",
+    multiSelect: false,
+    options: [
+      { label: "Run /buyer-context now",  description: "I'll guide you through ~17 click-through questions, write the anchor, then continue this audit (recommended)." },
+      { label: "Continue without it",      description: "Run in no-anchor mode: every per-surface audit scores Buyer-Context Alignment at 5/10 with a low-confidence flag." },
+      { label: "Cancel",                    description: "Stop the audit so I can write the anchor manually first." }
+    ]
+  }]
+})
 ```
 
-Do not silently proceed. The Buyer-Context Alignment dimension is the most differentiated of the rubric; running without it produces a generic audit.
+If the user picks "Run /buyer-context now": invoke the buyer-context skill flow inline (it lives in this collection). On completion, continue to Step 2 with the freshly written anchor.
+
+If the user picks "Continue without it": set `noAnchorMode = true` and proceed; flag every subagent prompt accordingly so the report header carries the warning.
+
+If the user picks "Cancel": stop.
+
+The Buyer-Context Alignment dimension is the most differentiated of the rubric; without an anchor the audit is generic — that's why bootstrap is the recommended path.
 
 ### Step 2 — Crawler audit (synchronous)
 
-Run the equivalent of `crawler-audit` first. This step is sequential because:
+Run the equivalent of `crawler-audit` first using the scripts shipped in this skill folder:
+
+- `node ./scripts/audit-robots.mjs <domain>` — bot matrix + sitemap directives.
+- `node ./scripts/audit-sitemap.mjs <domain-or-sitemap-url>` — URL count + freshness.
+- `node ./scripts/audit-uatest.mjs <homepage-url>` — anti-bot detection across browser/GPTBot/curl UAs.
+- `node ./scripts/audit-fetch.mjs https://<domain>/llms.txt` (and `/llms-full.txt`) — discovery aids.
+- `node ./scripts/audit-fetch.mjs https://<domain>` — homepage HTML signals (headings, OG, JSON-LD, canonical, hreflangs).
+
+This step is sequential because:
 - The sitemap discovered here informs URL discovery in Step 3.
 - The bot allow/disallow matrix informs what subsequent audits should report.
+- The cache populated here serves the parallel subagents in Step 4 (they hit `.audit-cache/` instead of refetching).
 
 Either:
 - (a) Inline the full `crawler-audit` workflow here (preferred — keeps full-audit self-contained), or
@@ -50,7 +78,7 @@ Output: `./reports/crawler-audit.md`.
 
 ### Step 3 — URL discovery
 
-From the sitemap (preferred) and the homepage's primary navigation, discover canonical URLs for these surfaces. Use the heuristics below; if a surface isn't found, mark it absent and note in the final report.
+From the sitemap (preferred — already parsed by `audit-sitemap.mjs` in Step 2) and the homepage's primary navigation (read the homepage's `cachePath` from Step 2's cache to inspect `<a href>` links), discover canonical URLs for these surfaces. Use the heuristics below; if a surface isn't found, mark it absent and note in the final report.
 
 | Surface | Discovery patterns (in priority order) |
 |---------|----------------------------------------|
@@ -63,7 +91,7 @@ From the sitemap (preferred) and the homepage's primary navigation, discover can
 | FAQ | `/faq`, `/faqs`, `/help`, `/support`, nav text "FAQ", "Help" |
 | Agent page | `/for-ai-agents`, `/llms`, `/llms.html`, `/ai`, `/agents`, `/for-llms` |
 
-For each URL: confirm it returns 200 with non-empty HTML before queueing a subagent.
+For each URL: confirm it returns 200 with non-empty HTML before queueing a subagent. Easiest check: `node ./scripts/audit-fetch.mjs <candidate-url>` and read `status` + `bytes` from the JSON output (the result lands in `.audit-cache/`, so the subagent inherits it for free).
 
 ### Step 4 — Dispatch parallel subagents
 
@@ -111,8 +139,11 @@ Write to <OUTPUT_PATH> with:
 - Recommended next steps
 
 # Tools available
-- WebFetch — fetch the URL and inspect HTML, JSON-LD, body text
-- Write — write the report
+- Bash — run `node ./scripts/audit-fetch.mjs <url>` to fetch the page. Returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; `valid: true|false` per block), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet), and `cachePath` for the full HTML.
+- Read — read `cachePath` if you need the raw HTML or the complete visible text.
+- Write — write the report to <OUTPUT_PATH>.
+
+Note: `./scripts/audit-fetch.mjs` is shipped inside this orchestrator's skill folder and inside every per-surface skill folder. Subagents invoked by the Task tool should use a relative path that resolves under the orchestrator's CWD.
 
 Begin.
 ```
@@ -228,7 +259,7 @@ Run `/full-audit` again after this batch lands to measure the lift. Target: site
 
 | Mistake | Fix |
 |---------|-----|
-| Running without `./buyer-context.md` | Refuse with a clear next step (run `/buyer-context` first) |
+| Running without `./buyer-context.md` | Don't refuse — auto-bootstrap via `AskUserQuestion` (Step 1). The default option chains in `/buyer-context` so the user gets the anchor without restarting the flow. Only fall through to no-anchor mode if the user explicitly opts out. |
 | Telling subagents to "invoke the homepage-audit skill" | They may not have it installed; paste the full instructions + rubric into the prompt |
 | Running surfaces sequentially instead of in parallel | Use Task tool's parallel-dispatch pattern; 7 surfaces in parallel ≈ 1 surface's wall time |
 | Synthesizing without de-duping | If 4 surfaces flag the same site-wide issue, count it once at high priority |

@@ -80,10 +80,14 @@ If the page has product videos:
 
 A video as the only explanation = invisible to most LLMs.
 
+## Tools
+
+`node ./scripts/audit-fetch.mjs <url>` (via Bash) — caches to `.audit-cache/` and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; each block has `valid: true|false`), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet; full HTML payload at `cachePath`).
+
 ## Workflow
 
 1. Read `./buyer-context.md` if present.
-2. `WebFetch` the URL.
+2. Run `node ./scripts/audit-fetch.mjs <url>` via Bash. Use `jsonLd[]` for any `Service`/`SoftwareApplication` blocks, `headings` and `visibleText` for the feature list. Read `cachePath` to inspect screenshot `<img alt>` attributes when needed.
 3. Enumerate features named on the page.
 4. For each feature, attempt to extract: name, what-it-does, who-it's-for, screenshot alt, schema markup.
 5. Apply the universal rubric with features weights.

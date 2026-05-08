@@ -76,10 +76,14 @@ About pages bear extra weight for citation-worthiness:
 - Awards or third-party recognition with attribution?
 - Public commitments (B Corp, carbon neutral, accessibility statement)?
 
+## Tools
+
+`node ./scripts/audit-fetch.mjs <url>` (via Bash) — caches to `.audit-cache/` and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; each block has `valid: true|false`), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet; full HTML payload at `cachePath`).
+
 ## Workflow
 
 1. Read `./buyer-context.md` if present.
-2. `WebFetch` the URL; capture HTML, JSON-LD, body text.
+2. Run `node ./scripts/audit-fetch.mjs <url>` via Bash. Look for `Organization` and `Person` blocks in `jsonLd[]`; check `visibleText` for the founding story.
 3. Apply the universal rubric with about weights.
 4. Run surface-specific checks: Organization schema completeness, Person schema for each leader, founding-story extractability.
 5. Compute composite, write report.

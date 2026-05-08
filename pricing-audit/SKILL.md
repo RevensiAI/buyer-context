@@ -79,10 +79,14 @@ If there's a "Contact sales" tier, that's expected. But:
 - Is *anything* about it disclosed (price ranges, what triggers Enterprise, included features)?
 - Is the contact mechanism clear (form, email, phone)?
 
+## Tools
+
+`node ./scripts/audit-fetch.mjs <url>` (via Bash) — caches to `.audit-cache/` and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; each block has `valid: true|false`), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet; full HTML payload at `cachePath`).
+
 ## Workflow
 
 1. Read `./buyer-context.md` if present; otherwise no-anchor mode.
-2. `WebFetch` the URL; capture HTML, JSON-LD, body text.
+2. Run `node ./scripts/audit-fetch.mjs <url>` via Bash. Parse JSON; inspect `jsonLd[]` (look for `Product`/`Offer` per tier), `headings`, `visibleText`. Read `cachePath` if you need raw HTML for plan-table inspection.
 3. Apply the universal rubric (see `references/audit-engine.md`) with pricing weights.
 4. Run surface-specific checks above.
 5. For each visible plan, produce a structured table in the report.

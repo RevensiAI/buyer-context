@@ -41,14 +41,16 @@ If `./buyer-context.md` already exists:
 
 If no file exists, proceed directly to Step 2.
 
-### Step 2 — Site discovery (parallel WebFetch)
+### Step 2 — Site discovery (parallel script fetches)
+
+This skill ships `./scripts/audit-fetch.mjs`. Each call returns JSON with `status`, `jsonLd[]`, `openGraph`, `headings`, `visibleText` (5 KB), `cachePath`, etc., and caches to `.audit-cache/` so re-runs are instant.
 
 1. If site URL not yet given, ask once.
-2. Single `WebFetch` to homepage `/`.
-3. Parse homepage `<a href>` for matches against the regex set `pricing|plans|customers|case-stud|stories|testimonials`. Take the first match per category (one for the pricing-family, one for the customers-family). If no homepage match, fall back to the literal paths `/pricing` and `/customers`.
-4. **Single batched message containing 2 parallel `WebFetch` calls** for the two discovered subpages.
+2. Run `node ./scripts/audit-fetch.mjs <homepage-url>` via Bash; parse the JSON.
+3. Read `cachePath` for the full HTML and parse `<a href>` for matches against the regex set `pricing|plans|customers|case-stud|stories|testimonials`. Take the first match per category (one for the pricing-family, one for the customers-family). If no homepage match, fall back to the literal paths `/pricing` and `/customers`.
+4. **Single message containing 2 parallel Bash calls** to `node ./scripts/audit-fetch.mjs <url>` for the two discovered subpages.
 5. Failure handling:
-   - Homepage returns <500 chars usable text → set `homepageThin = true`. Tell the user once ("Couldn't extract much from the homepage; options will be more generic."), proceed.
+   - Homepage `visibleTextChars` < 500 → set `homepageThin = true`. Tell the user once ("Couldn't extract much from the homepage; options will be more generic."), proceed.
    - Subpage 404 → silently drop; affected fields downgrade to generic options.
    - All 3 fetches fail → fully-generic mode (every question gets a generic option list). Print a one-line warning at the top of the resulting `./buyer-context.md`.
 

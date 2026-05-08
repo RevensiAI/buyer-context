@@ -39,15 +39,36 @@ competitor-audit applies the **homepage** weight vector by default:
 
 For "Buyer-Context Alignment" specifically, the score reflects how well the **competitor** communicates *their own* positioning (derived from their site), not how well they match *your* buyer context.
 
+## Tools
+
+- `node ./scripts/audit-fetch.mjs <url>` (via Bash) — caches to `.audit-cache/` and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` parsed, `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB; full HTML at `cachePath`).
+- `node ./scripts/audit-find-competitors.mjs <company-or-domain> [count]` — Brave-Search competitor discovery. Requires `BRAVE_API_KEY` (free tier at brave.com/search/api/). Exits non-zero with a clear message if the env var is unset; in that case fall through to user confirmation.
+
 ## Workflow
 
-1. **Refuse if no anchor.** If `./buyer-context.md` is missing, prompt the user to run `/buyer-context` first. Do not proceed.
+1. **Anchor (auto-bootstrap if missing).** If `./buyer-context.md` exists, read it and proceed. If not, use `AskUserQuestion` to offer a chained run:
+
+   ```
+   AskUserQuestion({
+     questions: [{
+       header: "Anchor missing",
+       question: "No ./buyer-context.md found. Comparison is meaningless without an anchor. Run /buyer-context now (~2 min)?",
+       multiSelect: false,
+       options: [
+         { label: "Run /buyer-context now", description: "I'll guide you through ~17 click-through questions, write the anchor, then continue (recommended)." },
+         { label: "Cancel",                  description: "Stop so I can write the anchor manually first." }
+       ]
+     }]
+   })
+   ```
+
+   On "Run now": invoke buyer-context inline, then continue. On "Cancel": stop. Unlike full-audit, **competitor-audit has no no-anchor mode** — the side-by-side comparison only makes sense relative to a stated ICP/USP.
 
 2. **Derive competitor URL** if not given:
    - From buyer-context category, ask the user to confirm 1–3 names, OR
-   - If `BRAVE_API_KEY` is set: search "{{category}} alternatives" and suggest top 3 results.
+   - Run `node ./scripts/audit-find-competitors.mjs <your-domain>` to surface 5 likely competitors via Brave Search; show the top 3 to the user for confirmation. If the script exits with code 2 (`BRAVE_API_KEY` not set), fall back to user confirmation only.
 
-3. **Build competitor-context.** Fetch competitor's homepage, about, pricing, customers pages (best effort — skip ones that 404). Extract:
+3. **Build competitor-context.** Run `node ./scripts/audit-fetch.mjs <url>` for the competitor's homepage, about, pricing, customers pages — issue them as parallel Bash calls in one message. Skip any that return non-200 status. Extract:
    - Brand, tagline, category, one-sentence pitch
    - Apparent ICP (segment, sales motion inferred from CTAs, vertical focus)
    - USP / differentiating claim from hero
@@ -130,7 +151,7 @@ For "Buyer-Context Alignment" specifically, the score reflects how well the **co
 
 | Mistake | Fix |
 |---------|-----|
-| Running without `./buyer-context.md` | Refuse — comparison is meaningless without an anchor |
+| Running without `./buyer-context.md` | Don't refuse — auto-bootstrap via `AskUserQuestion` (Step 1) and chain in `/buyer-context`. Only stop if the user explicitly cancels. |
 | Auto-discovering 5+ competitors and scoring all | Limit to 3 to keep the report scannable; let the user pick |
 | Reading buyer-context as the *competitor's* anchor | The competitor has their own positioning; capture it in `competitor-context.md`, don't apply yours to them |
 | Treating one rubric dimension as decisive | The composite matters; small wins across dimensions add up |

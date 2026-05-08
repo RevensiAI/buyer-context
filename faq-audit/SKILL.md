@@ -101,10 +101,14 @@ For FAQs specifically, check:
 
 Some FAQ implementations only fetch answers via JS when the user clicks. This means agents that don't run JS (most crawlers) see only the questions. **Critical fail:** if the answer text isn't in the initial HTML response, the FAQPage schema is hollow and the answers are invisible.
 
+## Tools
+
+`node ./scripts/audit-fetch.mjs <url>` (via Bash) — caches to `.audit-cache/` and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; each block has `valid: true|false`), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet; full HTML payload at `cachePath`).
+
 ## Workflow
 
 1. Read `./buyer-context.md` if present.
-2. `WebFetch` the URL.
+2. Run `node ./scripts/audit-fetch.mjs <url>` via Bash. Search `jsonLdTypes` for `FAQPage`; if found, walk the matching block's `mainEntity[]` for `Question` + `acceptedAnswer` shape. Use `visibleText` (or read `cachePath` for raw HTML) to enumerate Q&A pairs visible to a non-JS crawler.
 3. Validate `FAQPage` JSON-LD presence and structure.
 4. Enumerate Q&A pairs from the visible HTML; check each against schema entries (mismatch = problem).
 5. Score each Q&A on phrasing, self-containment, completeness.

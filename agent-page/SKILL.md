@@ -46,11 +46,15 @@ A two-mode skill for the emerging convention of **dedicated agent pages** — a 
 
 **Sum:** 14.
 
+## Tools
+
+`node ./scripts/audit-fetch.mjs <url>` (via Bash) — caches to `.audit-cache/` and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; each block has `valid: true|false`), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet; full HTML payload at `cachePath`).
+
 ## Audit Mode Workflow
 
-1. Try common paths to find the agent page; if none found → switch to **build mode**.
+1. Try common paths to find the agent page; if none found → switch to **build mode**. (Use `audit-fetch.mjs` for each candidate URL — `status: 200` confirms presence.)
 2. If found: read `./buyer-context.md` if present.
-3. `WebFetch` the page; capture HTML, JSON-LD, body text, links.
+3. Run `node ./scripts/audit-fetch.mjs <url>` via Bash. Use `jsonLd[]`/`jsonLdTypes[]` for schema breadth; `visibleText` for prose; read `cachePath` for the link graph and any `ContactPoint`/API-endpoint signals.
 4. Score against the rubric with these specifics:
    - **Extractability:** is everything in plain text? No JS-only content? Tables and lists rather than prose where appropriate?
    - **Schema:** Organization, Service, Offer, ContactPoint, Action items, FAQPage, Article. Multiple types acknowledged.

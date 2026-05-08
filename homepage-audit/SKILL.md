@@ -68,11 +68,15 @@ Within the first scroll, identify 3 proof points. For each:
 - `BreadcrumbList` (optional but valuable)
 - If the page mentions a primary product: `SoftwareApplication`, `Service`, or `Product` schema
 
+## Tools
+
+`node ./scripts/audit-fetch.mjs <url>` (via Bash) — caches to `.audit-cache/` and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; each block has `valid: true|false`), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet; full payload at `cachePath`). First run idempotently adds `.audit-cache/` and `reports/` to `.gitignore`.
+
 ## Workflow
 
 1. **Read anchor.** If `./buyer-context.md` exists, read it. Extract: brand, ICP segment, USP, top proof points, primary CTA pattern, vocabulary use/avoid lists. If absent, set `noAnchorMode = true`.
 
-2. **Fetch the page.** `WebFetch` the URL. Capture the raw HTML, all `<script type="application/ld+json">` blocks, OpenGraph tags, and the visible body text.
+2. **Fetch the page.** Run `node ./scripts/audit-fetch.mjs <url>` and parse the JSON. Use `jsonLd[]` for schema, `openGraph`/`canonical` for head signals, `headings` for hero, `visibleText` for above-the-fold extractability. Read `cachePath` if you need the raw HTML.
 
 3. **Run the universal rubric** (`references/audit-engine.md`) — score each of the 6 dimensions 1–10. In no-anchor mode: score Buyer-Context Alignment at 5/10 with a clear "low-confidence — no anchor" flag.
 

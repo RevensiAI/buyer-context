@@ -86,11 +86,15 @@ Even if the page is your own (it should favor you), an LLM-readable comparison s
 
 Pages that look like attack ads score lower because models discount them.
 
+## Tools
+
+`node ./scripts/audit-fetch.mjs <url>` (via Bash) — caches to `.audit-cache/` and returns JSON with `status`, `title`, `description`, `canonical`, `openGraph`, `twitter`, `jsonLd[]` (parsed; each block has `valid: true|false`), `jsonLdTypes[]`, `headings`, `antiBotSignals[]`, `visibleText` (5 KB snippet; full HTML payload at `cachePath`).
+
 ## Workflow
 
 1. Read `./buyer-context.md` if present.
 2. Identify the named competitor from URL/title/H1.
-3. `WebFetch` the URL; capture HTML, JSON-LD, body text, table structure.
+3. Run `node ./scripts/audit-fetch.mjs <url>` via Bash. Use `jsonLd[]`, `headings`, `visibleText`. Read `cachePath` for the raw HTML when you need to inspect the comparison table structure.
 4. For each claim about the competitor, classify: sourced/dated/specific vs. vague.
 5. Apply the universal rubric with comparison weights.
 6. Compute composite, write report.
