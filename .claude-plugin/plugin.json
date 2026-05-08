@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "revensi",
+  "version": "0.1.0",
+  "description": "12-skill audit collection that simulates how AI buying agents read your site and produces a gap report your repair agents can close.",
+  "author": {
+    "name": "Revensi",
+    "url": "https://revensi.com"
+  },
+  "homepage": "https://github.com/RevensiAI/buyer-context",
+  "repository": "https://github.com/RevensiAI/buyer-context",
+  "license": "MIT",
+  "keywords": [
+    "audit",
+    "ai-readability",
+    "buyer-context",
+    "llm-agents",
+    "structured-data",
+    "json-ld",
+    "schema",
+    "seo"
+  ],
+  "skills": [
+    "./about-audit",
+    "./agent-page",
+    "./buyer-context",
+    "./case-study-audit",
+    "./comparison-audit",
+    "./competitor-audit",
+    "./crawler-audit",
+    "./faq-audit",
+    "./features-audit",
+    "./full-audit",
+    "./homepage-audit",
+    "./pricing-audit"
+  ]
+}

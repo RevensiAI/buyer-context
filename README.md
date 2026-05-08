@@ -26,6 +26,43 @@ Installs all 12 skills under `~/.claude/skills/`. Individual skills install the 
 npx skills add RevensiAI/buyer-context/homepage-audit
 ```
 
+### Or install as a Claude Code plugin
+
+Claude Code users can install the suite as a plugin instead. Add the marketplace once, then install the plugin:
+
+```bash
+/plugin marketplace add RevensiAI/buyer-context
+/plugin install revensi@revensi-buyer-context
+```
+
+This installs all 12 skills under the `revensi` plugin namespace. Anywhere the [Quickstart](#quickstart) below shows `/skill-name`, plugin users type `/revensi:skill-name`:
+
+```
+/revensi:buyer-context
+/revensi:crawler-audit
+/revensi:full-audit example.com
+/revensi:homepage-audit https://example.com
+```
+
+To pull in upstream updates: `/plugin marketplace update revensi-buyer-context`. To remove: `/plugin uninstall revensi`.
+
+The plugin and `npx skills add` paths are independent — pick one. The plugin route gives namespacing and one-command updates inside Claude Code; the `npx` route is portable to other Agent Skills runtimes (Codex, Cursor, Windsurf).
+
+### Running in Claude Code Cowork
+
+The suite works in [Claude Code on the web / Cowork](https://docs.claude.com/en/docs/claude-code/web-quickstart) — the audit scripts only need Node 18+, the built-in `fetch`, and outbound HTTPS, all standard in Cowork's sandbox. A few setup notes:
+
+- **Network policy** — set the environment's outbound network access to **Trusted**. Every audit fetches public URLs; with **None**, all audits will fail.
+- **Setup script** — Cowork sessions start from a fresh clone, so installs don't persist across sessions. Add the install to your environment's setup script so it runs automatically:
+
+  ```bash
+  npx skills add RevensiAI/buyer-context
+  ```
+
+  (`npx` works in setup scripts; the `/plugin marketplace add` flow runs inside Claude Code itself, so for plugin-style installs you'd type the two `/plugin …` commands at the start of each session.)
+- **Env vars** — if you'll use `/revensi:competitor-audit` with auto-discovery, set `BRAVE_API_KEY` in the Cowork environment's env vars. Without it, competitor-audit asks you to confirm competitor names directly.
+- **Retrieving reports** — `./reports/`, `./.audit-cache/`, and `./buyer-context.md` land in the cloud workspace. Commit and push (or use Cowork's PR flow) to pull them back to your machine.
+
 ## Quickstart
 
 Run these inside your agent, from the directory you want reports to land in. Order matters: the anchor (step 1) is what every audit reads for alignment scoring.
@@ -184,6 +221,11 @@ Full rubric: [`shared/audit-engine.md`](shared/audit-engine.md).
 ```
 buyer-context/
 ├── README.md                  ← you are here
+├── LICENSE                    ← MIT
+├── PRIVACY.md
+├── .claude-plugin/            ← Claude Code plugin + marketplace manifests
+│   ├── plugin.json
+│   └── marketplace.json
 ├── shared/                    ← maintainer source of truth (NOT installed)
 │   ├── audit-engine.md
 │   ├── ai-bots.md
@@ -225,4 +267,8 @@ Built and maintained by [Revensi](https://revensi.com) — agent-led growth for 
 
 ## License
 
-MIT. See `LICENSE`.
+MIT. See [`LICENSE`](LICENSE).
+
+## Privacy
+
+The plugin runs locally and does not send data to Revensi or any third party (except the URLs you audit, and Brave Search if you supply an API key). See [`PRIVACY.md`](PRIVACY.md) for details.
