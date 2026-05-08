@@ -16,7 +16,7 @@ Without this document, audits run in "no-anchor mode" and give generic feedback.
 ## Inputs
 
 - The user's primary site URL (required).
-- ~17 click-through questions, each a single `AskUserQuestion` call with 2-4 site-derived options plus an auto-appended "Other" for custom answers (~2-3 min total). Near-zero typing.
+- ~17 click-through questions, each a single `AskUserQuestion` call with 2-4 site-derived options plus an auto-appended "Other" for custom answers (~2 min total). Near-zero typing. Several spec fields (One-sentence pitch, Industry/vertical, Failure modes of incumbents, Why now) are not asked directly — they're synthesized at write time from the user's other answers and the site evidence bundle.
 
 ## Output
 
@@ -63,18 +63,18 @@ Before asking any questions, scan the fetched pages and build an internal "evide
 | `brand` | `<title>`, `og:site_name`, first `<h1>` | auto-fill |
 | `tagline` | hero h1, hero p, og:description | auto-fill |
 | `cta_primary` | most prominent button copy | auto-fill |
-| `cta_secondary` | second-most prominent button | Q23 |
+| `cta_secondary` | second-most prominent button | Q17 (CTAs) |
 | `category_phrase` | repeated noun phrases on `/` | auto-fill (if dominant) or Q1 |
 | `sales_motion_signal` | CTA verbs: trial/sign-up→PLG; demo/contact→sales-led; both→hybrid | Q3 |
 | `pricing_tiers` | tier names from /pricing | Q4 |
-| `buyer_titles` | titles in testimonial bylines on /customers | Q7, Q8 |
-| `vertical_clusters` | customer-logo alt text + /customers section headings | Q5, Q19 |
-| `proof_candidates` | number+unit patterns ("$30M", "10x"), named-customer claims, certification badges, funding mentions | Q18 |
-| `vocabulary_recurring` | noun phrases ≥3 occurrences across fetched pages | Q20 |
-| `competitor_names` | from /vs/ pages, comparison sections, "replace X" copy | Q11 |
-| `numeric_claims` | "first to", "only X", numeric metrics in hero | Q15, Q16 |
-| `recent_press` | "in 2025", "AI", funding announcements, blog dates | Q17 |
-| `migration_phrases` | "migration in minutes", "import in one click" → low cost; "deep integration", "white-glove" → high | Q12 |
+| `buyer_titles` | titles in testimonial bylines on /customers; tagged `[buyer]`/`[user]`/`[both]` based on context (pricing/contact = buyer; product/docs = user; testimonial bylines = both) | Q7 (single merged question; falls back to two questions if tagging confidence is low) |
+| `vertical_clusters` | customer-logo alt text + /customers section headings | Q5 (drives both `Industry / vertical` and `Must-Win Verticals` from a single multi-select) |
+| `proof_candidates` | number+unit patterns ("$30M", "10x"), named-customer claims, certification badges, funding mentions | Q14 |
+| `vocabulary_recurring` | noun phrases ≥3 occurrences across fetched pages | Q15 |
+| `competitor_names` | from /vs/ pages, comparison sections, "replace X" copy | Q10 |
+| `numeric_claims` | "first to", "only X", numeric metrics in hero | Q13 (single merged "Core claim" question that also populates USP and One-sentence pitch at write time) |
+| `recent_press` | "in 2025", "AI", funding announcements, blog dates | Step 6 synthesis (Why now field — not asked) |
+| `migration_phrases` | "migration in minutes", "import in one click" → low cost; "deep integration", "white-glove" → high | Q11 |
 
 If a signal is empty, the corresponding question falls back to a generic option list — never skip the question.
 
@@ -101,32 +101,33 @@ These five fields are written directly from the evidence bundle and surface only
 
 **Question order (easiest → hardest, builds momentum):**
 
-| # | Field | header | Option source | Multi |
+| # | Field(s) populated | header | Option source | Multi |
 |---|---|---|---|---|
-| 1 | Category (only if not auto-filled) | Category | `category_phrase` candidates | no |
+| 1 | Category *(only if not auto-filled in Step 4)* | Category | `category_phrase` candidates | no |
 | 2 | Segment | Segment | logos + pricing copy | no |
 | 3 | Sales motion | Sales motion | `sales_motion_signal` | no |
 | 4 | Company size | Company size | `pricing_tiers` | no |
-| 5 | Industry / vertical | Vertical | `vertical_clusters` | no |
+| 5 | **Must-Win Verticals** + Industry/vertical (merged) | Must-win | `vertical_clusters` — pick 1-3; the same selections populate both fields at write time | **yes** |
 | 6 | Geography | Geography | footer copyright + /about | no |
-| 7 | Buyer titles | Buyer titles | `buyer_titles` | no |
-| 8 | User titles (skip if same as Q7) | User titles | `buyer_titles` (filtered to non-buyer roles) | no |
-| 9 | Anti-ICP | Anti-ICP | pricing floor + heuristics | no |
-| 10 | Trigger event | Trigger | "replace X"/"tired of Y" copy | no |
-| 11 | Current alternative | Alternative | `competitor_names` | no |
-| 12 | Switching cost | Switch cost | `migration_phrases` | no |
-| 13 | Primary JTBD | JTBD | **synthesize 2-3 candidate phrasings** in "When I'm X, I want to Y, so I can Z" form from /features hero copy | no |
-| 14 | One-sentence pitch | Pitch | **synthesize 2-3 candidates** from hero h1+p combined | no |
-| 15 | USP | USP | **synthesize 2-3 candidates** from repeated differentiators | no |
-| 16 | Core differentiating claim | Core claim | **synthesize 2-3 candidates** from `numeric_claims` | no |
-| 17 | Why now | Why now | `recent_press` | no |
-| 18 | Proof points (pick 3-5) | Proof | `proof_candidates` — present 5-6 candidates | **yes** |
-| 19 | Must-win verticals (pick 1-3) | Must-win | `vertical_clusters` | **yes** |
-| 20 | Use vocabulary (pick 3-5) | Use words | `vocabulary_recurring` top 5-7 | **yes** |
-| 21 | Avoid vocabulary (pick 3-5) | Avoid words | generic overused-buzzword list (no good site signal) | **yes** |
-| 22 | Failure modes of incumbents (pick 3) | Failure modes | /vs/ page bullets if present, else generic | **yes** |
-| 23 | Secondary CTA | 2nd CTA | `cta_secondary` | no |
-| 24 | Anti-CTA | Anti-CTA | mis-prioritized CTAs detected, else generic | no |
+| 7 | **Buyer titles + User titles** (merged) | Roles | `buyer_titles` — each option labelled with `[buyer]`, `[user]`, or `[both]`; the split happens at write time. Falls back to two separate questions (Q7a Buyer titles, Q7b User titles) if evidence is too thin to tag confidently | **yes** |
+| 8 | Anti-ICP | Anti-ICP | pricing floor + heuristics | no |
+| 9 | Trigger event | Trigger | "replace X"/"tired of Y" copy | no |
+| 10 | Current alternative | Alternative | `competitor_names` | no |
+| 11 | Switching cost | Switch cost | `migration_phrases` | no |
+| 12 | Primary JTBD | JTBD | **synthesize 2-3 candidate phrasings** in "When I'm X, I want to Y, so I can Z" form from /features hero copy | no |
+| 13 | **Core claim + USP + One-sentence pitch** (merged) | Claim | **synthesize 3-4 candidates** from `numeric_claims` + repeated differentiators + hero h1+p. Core claim and USP are populated verbatim from the user's pick; pitch is synthesized at write time as `"<Brand> is <Category> for <Segment> that <core claim>."` | no |
+| 14 | Proof points (pick 3-5) | Proof | `proof_candidates` — present 5-6 candidates | **yes** |
+| 15 | Use vocabulary (pick 3-5) | Use words | `vocabulary_recurring` top 5-7 | **yes** |
+| 16 | Avoid vocabulary (pick 3-5) | Avoid words | generic overused-buzzword list (no good site signal) | **yes** |
+| 17 | **Secondary CTA + Anti-CTA** (merged) | CTAs | one screen with prefixed options like `"2nd: Book demo"` and `"Anti: Read whitepaper"` from `cta_secondary` and any mis-prioritized CTAs detected. Parse the prefix at write time to split into the two fields | **yes** |
+
+**Fields not asked (synthesized at write time):**
+
+- **One-sentence pitch** — derived from the Q13 pick + Brand + Category + Segment.
+- **Industry / vertical** — derived from the Q5 multi-select (`"primarily " + selected.join(" + ")`, or `"any"` if user picks "Other: any").
+- **USP** — set verbatim from the Q13 Core claim pick.
+- **Why now** — top phrase from `recent_press` evidence verbatim; if empty, the field is set to `<n/a>`.
+- **Failure Modes of Incumbents** — one-line note inferred from Q10 Current alternative vs. Q13 Core claim. The section heading remains.
 
 #### Worked example — Sales motion (Q3)
 
@@ -146,7 +147,7 @@ AskUserQuestion({
 })
 ```
 
-#### Worked example — Synthesized JTBD (Q13)
+#### Worked example — Synthesized JTBD (Q12)
 
 ```
 AskUserQuestion({
@@ -163,7 +164,46 @@ AskUserQuestion({
 })
 ```
 
-#### Worked example — Proof points (Q18, multi-select)
+#### Worked example — Core claim (Q13, merged USP + Pitch)
+
+```
+AskUserQuestion({
+  questions: [{
+    header: "Claim",
+    question: "Pick the core claim your buyer should remember (drives USP and pitch — synthesized from your hero + repeated differentiators):",
+    multiSelect: false,
+    options: [
+      { label: "30s deploys",    description: "deploys in 30 seconds, not 30 minutes (your hero h1 + benchmark page)" },
+      { label: "Only HIPAA",     description: "the only HIPAA-compliant option in this category (compliance page badge)" },
+      { label: "10x cold start", description: "10x faster cold start than self-hosted (benchmark page hero stat)" }
+    ]
+  }]
+})
+```
+
+At write time, the user's pick populates `Core differentiating claim` and `Unique selling proposition (USP)` verbatim, and `One-sentence pitch` is rendered as `"<Brand> is <Category> for <Segment> that <pick>."`
+
+#### Worked example — Roles, merged with `[buyer]`/`[user]`/`[both]` tagging (Q7)
+
+```
+AskUserQuestion({
+  questions: [{
+    header: "Roles",
+    question: "Pick the roles that matter — we'll separate buyers vs. day-to-day users at write time:",
+    multiSelect: true,
+    options: [
+      { label: "VP Engineering [buyer]",       description: "appears in your enterprise pricing and 'Talk to sales' page" },
+      { label: "Director of DevOps [buyer]",   description: "named on /customers signing the deal" },
+      { label: "Senior Software Engineer [user]", description: "appears in /docs and feature copy, never in pricing" },
+      { label: "SRE [both]",                   description: "testimonial bylines show SREs both signing and using the product" }
+    ]
+  }]
+})
+```
+
+If `buyer_titles` evidence has fewer than 3 cleanly-tagged roles, fall back to two separate questions (Q7a Buyer titles, Q7b User titles) instead of this merged form.
+
+#### Worked example — Proof points (Q14, multi-select)
 
 ```
 AskUserQuestion({
@@ -182,10 +222,31 @@ AskUserQuestion({
 })
 ```
 
-### Step 6 — Write file + final review
+### Step 6 — Synthesize, write file, final review
 
-1. Write `./buyer-context.md` using the canonical structure from `references/buyer-context.spec.md`. Always include the `*Last updated: <YYYY-MM-DD>*` line. **Section headings must match the spec exactly — downstream audits grep for them.**
-2. Single `AskUserQuestion` review screen with `multiSelect: true` showing the auto-filled values:
+#### 6a. Synthesize the fields that weren't asked
+
+Before writing, derive the spec fields that aren't tied to a question. Run these in order — each is deterministic from prior answers and the evidence bundle:
+
+| Field | Derivation |
+|---|---|
+| `Industry / vertical` | From the Q5 multi-select selections. If user picked specific verticals → `"primarily " + selected.join(" + ")`. If user picked "Other: any" or selected nothing → `"any"`. |
+| `Buyer titles` | From the Q7 merged selections — items tagged `[buyer]` or `[both]`. If Q7 fell back to two questions, take Q7a verbatim. |
+| `User titles` | From the Q7 merged selections — items tagged `[user]` or `[both]`. If Q7 fell back to two questions, take Q7b verbatim. If empty/same as buyer titles, write `"same as buyer"`. |
+| `Unique selling proposition (USP)` | Verbatim from the Q13 Core claim pick. |
+| `One-sentence pitch` | Template: `"<Brand> is <Category> for <Segment> that <Q13 pick>."` Trim/normalize punctuation so the result reads as one clean sentence. |
+| `Why now` | Top phrase from `recent_press` evidence verbatim (e.g. `"$30M Series B led by a16z, Mar 2025"`). If `recent_press` is empty, write `<n/a>`. |
+| `Failure Modes of Incumbents` | One-line note: `"Inferred: <Q10 Current alternative> typically falls short on <Q13 Core claim> — the page should make this gap explicit."` Renders as a single bullet so the section heading remains populated. |
+| `Secondary CTA` | From Q17 — items prefixed `2nd:` (strip the prefix). If multiple, take the first. If none, leave empty. |
+| `Anti-CTA` | From Q17 — items prefixed `Anti:` (strip the prefix). If multiple, take the first. If none, leave empty. |
+
+#### 6b. Write `./buyer-context.md`
+
+Use the canonical structure from `references/buyer-context.spec.md`. Always include the `*Last updated: <YYYY-MM-DD>*` line. **Section headings must match the spec exactly — downstream audits grep for them.**
+
+#### 6c. Final-review screen
+
+Single `AskUserQuestion` with `multiSelect: true` showing the auto-filled and synthesized values most likely to need a tweak:
 
    ```
    AskUserQuestion({
@@ -194,18 +255,22 @@ AskUserQuestion({
        question: "Anything to fix? (leave empty to confirm all)",
        multiSelect: true,
        options: [
-         { label: "Brand: <value>",     description: "Auto-detected from <title>" },
-         { label: "Tagline: <value>",   description: "Verbatim from hero h1" },
-         { label: "Primary CTA: <value>", description: "Most prominent button copy" },
-         { label: "Category: <value>",  description: "Top noun phrase on homepage" },
-         { label: "Site: <value>",      description: "URL you provided" }
+         { label: "Brand: <value>",        description: "Auto-detected from <title>" },
+         { label: "Tagline: <value>",      description: "Verbatim from hero h1" },
+         { label: "Primary CTA: <value>",  description: "Most prominent button copy" },
+         { label: "Category: <value>",     description: "Top noun phrase on homepage" },
+         { label: "Industry: <value>",     description: "Synthesized from your must-win verticals (Q5)" },
+         { label: "Pitch: <value>",        description: "Synthesized template using Brand + Category + Segment + your Q13 pick" },
+         { label: "Failure modes: <value>", description: "One-line inference from your current-alternative + core-claim answers" },
+         { label: "Site: <value>",         description: "URL you provided" }
        ]
      }]
    })
    ```
 
-3. For each item the user selects, run a follow-up `AskUserQuestion` with two options: `Confirm: <current value>` and let auto-Other handle override. Update the file before finalizing.
-4. Print:
+For each item the user selects, run a follow-up `AskUserQuestion` with two options: `Confirm: <current value>` and let auto-Other handle the override. Update the file before finalizing.
+
+Then print:
 
    > "Anchor doc written to `./buyer-context.md`. Next: run `/crawler-audit` to check AI bot accessibility, or `/full-audit example.com` to audit the whole site."
 
@@ -219,12 +284,15 @@ See `references/buyer-context.spec.md` for the exact section structure, heading 
 |---------|-----|
 | Asked free-text instead of generating personalized options | Always derive options from the Step 3 evidence bundle; only fall back to generic options when fetch failed |
 | Fetched only the homepage | Fetch homepage + `/pricing` + `/customers` in parallel — the personalization budget pays back across 17 questions |
-| Asked multiple questions per `AskUserQuestion` call | One question per call. Closed-choice = `multiSelect: false`; only Q18-22 use `multiSelect: true` |
+| Asked multiple questions per `AskUserQuestion` call | One question per call. Closed-choice = `multiSelect: false`; the multi-select questions are Q5 (Must-win), Q7 (Roles), Q14 (Proof), Q15 (Use words), Q16 (Avoid words), Q17 (CTAs) |
 | Manually appended an "Other" option | The harness auto-appends Other; adding one yourself produces a duplicate |
 | Asked about Brand / Tagline / Primary CTA as standalone questions | These are auto-filled silently in Step 4 and reviewed only at Step 6 |
-| Synthesized JTBD/pitch/USP candidates were too generic | Pull verbatim phrases and metrics from /features and hero copy; vary the 2-3 candidate phrasings so the user has real choices |
+| Asked Pitch / USP / Industry / Failure modes / Why now as separate questions | These are not asked — they're synthesized in Step 6a from neighboring answers + the evidence bundle |
+| Skipped Step 6a synthesis and left these fields blank in the file | The headings are contract; populate them with the documented derivations even when evidence is thin (use `<n/a>` only as a last resort) |
+| Synthesized JTBD or Core-claim candidates were too generic | Pull verbatim phrases and metrics from /features and hero copy; vary the 2-3 candidate phrasings so the user has real choices |
 | Accepted "for everyone" as the segment answer | Push back: "Who's the *first* user — the one whose pain you solve most acutely?" |
-| Let USP be a feature list | A USP is *one* differentiator, not five |
+| Let the Q13 Core claim become a feature list | Core claim is *one* differentiator, not five — if every option is a feature bullet, regenerate the candidates |
+| Forced the merged Roles question (Q7) when evidence was too thin to tag confidently | Fall back to two separate questions (Q7a Buyer titles, Q7b User titles); the tag-based merge only works when ≥3 roles can be cleanly bucketed |
 | Forgot `*Last updated:*` line | Audits use it to detect staleness |
 | Wrote under `./reports/` | This is an input doc, not a report — write to `./buyer-context.md` at the cwd root |
 

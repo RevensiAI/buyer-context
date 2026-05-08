@@ -102,8 +102,9 @@ See `buyer-context/SKILL.md` for the canonical Q&A flow. Briefly:
 1. The skill `WebFetch`-es the homepage plus 2 subpages (`/pricing`, `/customers` — discovered from homepage links, with literal-path fallbacks) in parallel.
 2. It consolidates evidence (brand, tagline, CTA copy, pricing tiers, testimonial titles, customer-logo verticals, recurring noun phrases, competitor mentions, etc.).
 3. High-confidence fields — Brand, Site, Tagline, Primary CTA, Category — are auto-filled silently and surfaced for review at the end.
-4. The remaining ~17 fields are asked **one question per `AskUserQuestion` call**, each with 2-4 site-derived options plus the auto-appended "Other" for custom answers. Even prose-shaped fields (JTBD, pitch, USP, core differentiating claim) are presented as 2-3 candidate phrasings synthesized from site copy, so the user clicks rather than types.
-5. After all answers are collected, the file is written and a single review screen lets the user edit any auto-filled value before finalizing.
+4. ~17 fields are asked **one question per `AskUserQuestion` call**, each with 2-4 site-derived options plus the auto-appended "Other" for custom answers. Several questions are deliberately *merged* to cover multiple spec fields at once — for example, one "Core claim" pick populates `Core differentiating claim`, `Unique selling proposition (USP)`, and `One-sentence pitch`; one "Must-win verticals" multi-select populates both `Industry / vertical` and `Must-Win Verticals`; one tagged "Roles" multi-select populates both `Buyer titles` and `User titles`.
+5. A handful of fields are **synthesized at write time** rather than asked: `One-sentence pitch` (templated from Brand + Category + Segment + Core claim), `Why now` (top phrase from `recent_press` evidence), `Failure Modes of Incumbents` (one-line inference from Current alternative vs. Core claim). These section headings still appear in the output file so downstream audits can grep them.
+6. After all answers are collected and synthesis runs, the file is written and a single review screen lets the user edit any auto-filled or synthesized value before finalizing.
 
 If site discovery fails completely, the skill falls back to fully-generic option lists and notes the degradation at the top of the output file.
 
