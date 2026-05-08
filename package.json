@@ -1,6 +1,6 @@
 {
   "name": "buyer-context",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "12-skill audit collection that simulates how AI buying agents read your site and produces a gap report your repair agents can close.",
   "keywords": [
     "audit",
