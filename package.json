@@ -42,6 +42,8 @@
     "pricing-audit",
     "shared",
     ".claude-plugin",
+    ".codex-plugin",
+    ".agents",
     "PRIVACY.md"
   ],
   "engines": {

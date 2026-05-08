@@ -46,7 +46,18 @@ This installs all 12 skills under the `revensi` plugin namespace. Anywhere the [
 
 To pull in upstream updates: `/plugin marketplace update revensi-buyer-context`. To remove: `/plugin uninstall revensi`.
 
-The plugin and `npx skills add` paths are independent — pick one. The plugin route gives namespacing and one-command updates inside Claude Code; the `npx` route is portable to other Agent Skills runtimes (Codex, Cursor, Windsurf).
+### Or install as an OpenAI Codex plugin
+
+The repo also ships a Codex plugin manifest (`.codex-plugin/plugin.json`) and marketplace entry (`.agents/plugins/marketplace.json`). Point Codex at the marketplace, then install the plugin from it:
+
+```bash
+codex plugin marketplace add RevensiAI/buyer-context
+codex plugin install buyer-context@revensi-buyer-context
+```
+
+All 12 skills are auto-discovered from the repo root.
+
+The plugin and `npx skills add` paths are independent — pick one. The plugin route gives namespacing and one-command updates inside Claude Code or Codex; the `npx` route is portable to other Agent Skills runtimes (Cursor, Windsurf, etc.).
 
 ### Running in Claude Code Cowork
 
@@ -225,6 +236,10 @@ buyer-context/
 ├── PRIVACY.md
 ├── .claude-plugin/            ← Claude Code plugin + marketplace manifests
 │   ├── plugin.json
+│   └── marketplace.json
+├── .codex-plugin/             ← OpenAI Codex plugin manifest
+│   └── plugin.json
+├── .agents/plugins/           ← OpenAI Codex marketplace entry
 │   └── marketplace.json
 ├── shared/                    ← maintainer source of truth (NOT installed)
 │   ├── audit-engine.md

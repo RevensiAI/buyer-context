@@ -1,0 +1,47 @@
+{
+  "name": "buyer-context",
+  "version": "0.2.0",
+  "description": "12-skill audit collection that simulates how AI buying agents read your site and produces a gap report your repair agents can close.",
+  "author": {
+    "name": "Revensi",
+    "url": "https://revensi.com"
+  },
+  "homepage": "https://buyercontext.com",
+  "repository": "https://github.com/RevensiAI/buyer-context",
+  "license": "MIT",
+  "keywords": [
+    "audit",
+    "ai-readability",
+    "buyer-context",
+    "llm-agents",
+    "structured-data",
+    "json-ld",
+    "schema",
+    "seo"
+  ],
+  "skills": "./",
+  "interface": {
+    "displayName": "Buyer Context",
+    "shortDescription": "AI-readability audits for buying agents",
+    "longDescription": "Buyer Context is a 12-skill audit suite that runs your site through the same pass an AI buying agent does — extractability, schema, ICP alignment, citation-worthy proof, agent-actionability, crawler accessibility — and writes a prioritized gap report your repair agents can act on.",
+    "developerName": "Revensi",
+    "category": "Engineering",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://buyercontext.com",
+    "privacyPolicyURL": "https://github.com/RevensiAI/buyer-context/blob/main/PRIVACY.md",
+    "termsOfServiceURL": "https://revensi.com",
+    "defaultPrompt": [
+      "Run a full buyer-context audit on my site",
+      "Audit my homepage for AI buying agents",
+      "Check if AI bots can crawl my site"
+    ],
+    "brandColor": "#0F766E",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/logo.png",
+    "screenshots": []
+  }
+}
