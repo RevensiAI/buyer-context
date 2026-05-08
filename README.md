@@ -71,7 +71,7 @@ Responses cache to `./.audit-cache/` in your CWD (sha-keyed by URL+UA), so re-ru
 
 ### Re-audit cadence
 
-To track progress over time, schedule a periodic re-audit using the [`/loop`](https://github.com/anthropics/superpowers) skill:
+To track progress over time, schedule a periodic re-audit using the `/loop` skill:
 
 ```
 /loop 30d /full-audit example.com
