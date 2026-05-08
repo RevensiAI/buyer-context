@@ -10,7 +10,7 @@ The Plugin runs entirely on your local machine (or inside your Claude Code Cowor
 
 ## Data the Plugin sends
 
-- **Public URLs you specify.** When you run an audit, the Plugin makes HTTP requests to the URLs you pass in (your own site, a competitor's site, or a single page). These are ordinary browser-like fetches. Fetched HTML stays in your local cache and reports — Revensi does not receive it.
+- **Public URLs you specify.** When you run an audit, the Plugin makes HTTP requests to the URLs you pass in (your own site, a competitor's site, or a single page). These are ordinary browser-like fetches. Fetched HTML stays in your local reports directory — Revensi does not receive it.
 - **Brave Search API (optional).** If you set the `BRAVE_API_KEY` environment variable, `/revensi:competitor-audit` queries the [Brave Search API](https://brave.com/search/api/) to discover competitors when no URL is provided. The query string and your API key are sent directly to Brave under your account. Revensi does not see this traffic.
 - **Your AI runtime's network calls.** Your Claude Code (or other Agent Skills runtime) sends prompts and tool results to its provider (Anthropic, OpenAI, etc.) under that provider's privacy policy — not Revensi's. The Plugin does not modify or proxy those calls.
 
@@ -18,8 +18,7 @@ The Plugin runs entirely on your local machine (or inside your Claude Code Cowor
 
 All Plugin output stays on your filesystem. Nothing is uploaded to Revensi or to any other server by the Plugin.
 
-- **`./.audit-cache/`** — fetched pages, sha-keyed by URL + User-Agent, in your working directory.
-- **`./reports/`** — audit output in your working directory.
+- **`./reports/`** — audit output in your working directory, including raw fetch payloads at `./reports/fetch_<sha1>.json` (sha-keyed by URL + User-Agent, overwritten on subsequent runs).
 - **`./buyer-context.md`** — your positioning anchor, written by `/revensi:buyer-context` to your working directory.
 
 ## Data Revensi collects

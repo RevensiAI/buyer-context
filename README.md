@@ -61,7 +61,7 @@ The suite works in [Claude Code on the web / Cowork](https://docs.claude.com/en/
 
   (`npx` works in setup scripts; the `/plugin marketplace add` flow runs inside Claude Code itself, so for plugin-style installs you'd type the two `/plugin …` commands at the start of each session.)
 - **Env vars** — if you'll use `/revensi:competitor-audit` with auto-discovery, set `BRAVE_API_KEY` in the Cowork environment's env vars. Without it, competitor-audit asks you to confirm competitor names directly.
-- **Retrieving reports** — `./reports/`, `./.audit-cache/`, and `./buyer-context.md` land in the cloud workspace. Commit and push (or use Cowork's PR flow) to pull them back to your machine.
+- **Retrieving reports** — `./reports/` and `./buyer-context.md` land in the cloud workspace. Commit and push (or use Cowork's PR flow) to pull them back to your machine.
 
 ## Quickstart
 
@@ -102,9 +102,9 @@ Each skill ships small Node scripts under `<skill>/scripts/`:
 - `audit-uatest.mjs` — fetches the same URL with browser, GPTBot, and curl UAs and diffs the responses (the only reliable anti-bot detector).
 - `audit-find-competitors.mjs` (competitor-audit only) — Brave Search competitor discovery.
 
-Throughout the SKILL.md files, `./scripts/<name>.mjs` refers to a script under the **skill's** folder (typically `~/.claude/skills/<skill>/scripts/<name>.mjs` after install). Bash runs in your project CWD, so the model invokes scripts by absolute install path while reports and the cache land in your project directory.
+Throughout the SKILL.md files, `./scripts/<name>.mjs` refers to a script under the **skill's** folder (typically `~/.claude/skills/<skill>/scripts/<name>.mjs` after install). Bash runs in your project CWD, so the model invokes scripts by absolute install path while reports land in your project directory.
 
-Responses cache to `./.audit-cache/` in your CWD (sha-keyed by URL+UA), so re-runs are instant and parallel subagents share the cache. On first run, `.audit-cache/` and `reports/` are appended to `.gitignore` if one exists.
+Each fetch writes its full payload to `./reports/fetch_<sha1>.json` (sha-keyed by URL+UA, overwritten on subsequent runs), so the model can re-read the raw HTML/headers on demand without re-fetching mid-audit. On first run, `reports/` is appended to `.gitignore` if one exists.
 
 ### Re-audit cadence
 
@@ -114,7 +114,7 @@ To track progress over time, schedule a periodic re-run with the `/loop` skill:
 /loop 30d /full-audit example.com
 ```
 
-The cache makes monthly re-runs cheap; a fresh `./reports/full-audit-report.md` lands every 30 days.
+Each run writes a fresh `./reports/full-audit-report.md`, so you can diff month-over-month and watch the score move.
 
 ## About `/buyer-context`
 
