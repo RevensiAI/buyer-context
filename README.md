@@ -1,13 +1,15 @@
-# buyer-context
+# Buyer Context Skills for AI Agents
 
-A 12-skill collection for Claude Code that audits a website **for AI/LLM readability** — how well language models and the agents that act on behalf of buyers can crawl, parse, understand, and cite your site.
+A 12-skill audit collection for the way **AI buyers** shop today — agents on ChatGPT, Claude, Gemini, and Perplexity that research vendors and build shortlists on behalf of the humans buying your software.
 
-This is not SEO. It's a different lens: when an agent visits your homepage on a buyer's behalf, can it pull out your offer in plain text, find your price, see Organization schema, and progress without a human?
+When a buyer briefs their AI assistant with "find me a \<category\> for \<my situation\>", the agent visits a handful of vendor sites and decides which ones make the cut. This collection scores whether your site survives that pass: can the agent extract your offer, find your price, see your ICP fit, cite your proof, and progress without a human? It's a different lens from SEO — the AI shortlist is the new gatekeeper.
+
+Works with Claude Code, OpenAI Codex, Cursor, Windsurf, and any agent that supports Agent Skills.
 
 ## Prerequisites
 
-- [Claude Code](https://docs.claude.com/en/docs/claude-code/overview) installed and authenticated.
-- Skills are installed via `npx skills add` and invoked with `/skill-name` inside Claude Code.
+- An agent that supports Agent Skills — [Claude Code](https://docs.claude.com/en/docs/claude-code/overview), OpenAI Codex, Cursor, Windsurf, or similar.
+- Skills are installed via `npx skills add` and invoked with `/skill-name`.
 - Node.js 18+ on `PATH` (the per-skill scripts use built-in `fetch`).
 
 That's it — no API keys required for the core flow. `BRAVE_API_KEY` is optional (see [Optional environment](#optional-environment)).
@@ -15,13 +17,13 @@ That's it — no API keys required for the core flow. `BRAVE_API_KEY` is optiona
 ## Install
 
 ```bash
-npx skills add github:RevensiAI/buyer-context
+npx skills add RevensiAI/buyer-context
 ```
 
 This installs all 12 skills under `~/.claude/skills/`. You can also install individual skills:
 
 ```bash
-npx skills add github:RevensiAI/buyer-context/homepage-audit
+npx skills add RevensiAI/buyer-context/homepage-audit
 ```
 
 ## Quickstart
@@ -169,6 +171,14 @@ node shared/scripts/sync-references.mjs
 ```
 
 `sync-references` propagates `shared/audit-engine.md`, `shared/ai-bots.md`, `shared/buyer-context.spec.md`, and the runtime scripts into the right per-skill folders. Re-running it is idempotent (skips byte-identical files).
+
+## Contributing
+
+Contributions are welcome — issues, PRs, new skill ideas, and rubric refinements. Open a PR or file an issue on [GitHub](https://github.com/RevensiAI/buyer-context).
+
+## About
+
+Built and maintained by [Revensi](https://revensi.com) — agent-led growth for B2B SaaS.
 
 ## License
 
